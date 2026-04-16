@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TK Metal Sheet — เครื่องมือคำนวณ</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --border: #e2e8f0;
+  --border-accent: #f59e0b;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --accent: #d97706;
+  --accent-dim: rgba(245, 158, 11, 0.10);
+  --accent-glow: rgba(245, 158, 11, 0.25);
+  --success: #16a34a;
+  --danger: #dc2626;
+  --gradient-start: #f59e0b;
+  --gradient-end: #d97706;
+  --sheet-long: #2563eb;
+  --sheet-short: #0891b2;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Kanit', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.015'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page { display: none; position: relative; z-index: 1; }
+.page.active { display: block; }
+
+/* ===== MENU PAGE ===== */
+.menu-container {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 60px 16px;
+  text-align: center;
+}
+
+.menu-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  padding: 10px 28px;
+  border-radius: 50px;
+  margin-bottom: 20px;
+}
+
+.menu-badge-icon { font-size: 24px; }
+.menu-badge-text { font-weight: 800; font-size: 16px; color: #fff; letter-spacing: 1.5px; }
+
+.menu-title {
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.menu-subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 300;
+  margin-bottom: 48px;
+}
+
+.menu-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.menu-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.menu-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.menu-card:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+}
+
+.menu-card:hover::before { opacity: 1; }
+
+.menu-card-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  flex-shrink: 0;
+}
+
+.menu-card:nth-child(1) .menu-card-icon {
+  background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.1));
+}
+
+.menu-card:nth-child(2) .menu-card-icon {
+  background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(6,182,212,0.1));
+}
+
+.menu-card-content { flex: 1; }
+
+.menu-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.menu-card-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+.menu-card-arrow {
+  color: var(--text-muted);
+  font-size: 20px;
+  transition: transform 0.3s;
+}
+
+.menu-card:hover .menu-card-arrow {
+  transform: translateX(4px);
+  color: var(--accent);
+}
+
+.menu-footer {
+  margin-top: 60px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 300;
+}
+
+/* ===== BACK BUTTON ===== */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-family: 'Kanit', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 20px;
+}
+
+.back-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ===== PAGE 1: TRIM CALCULATOR ===== */
+.trim-container { width: 100%; max-width: 520px; margin: 0 auto; padding: 20px 16px 60px; }
+
+.trim-header { text-align: center; margin-bottom: 28px; }
+
+.trim-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  padding: 8px 20px; border-radius: 50px; margin-bottom: 12px;
+}
+
+.trim-badge-icon { font-size: 22px; }
+.trim-badge-text { font-weight: 800; font-size: 15px; color: #fff; letter-spacing: 1px; }
+
+.trim-header h1 {
+  font-size: 24px; font-weight: 800; margin: 8px 0 4px;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.trim-subtitle { font-size: 13px; color: var(--text-secondary); }
+
+.trim-label { font-size: 13px; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px; display: block; }
+
+.type-row { display: flex; gap: 10px; margin-bottom: 20px; }
+
+.type-btn {
+  flex: 1; padding: 14px 12px; border-radius: 12px;
+  border: 2px solid var(--border); background: #fff;
+  cursor: pointer; text-align: center; transition: all 0.2s;
+  font-family: 'Kanit', sans-serif;
+}
+
+.type-btn.active {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.08));
+}
+
+.type-num { font-size: 28px; font-weight: 800; color: var(--text-muted); line-height: 1; }
+.type-btn.active .type-num { color: var(--accent); }
+.type-desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.type-btn.active .type-desc { color: #b45309; }
+
+.input-row { display: flex; gap: 10px; align-items: stretch; margin-bottom: 20px; }
+.input-wrap { flex: 1; position: relative; }
+
+.input-wrap input {
+  width: 100%; padding: 14px 50px 14px 16px; font-size: 20px; font-weight: 700;
+  border-radius: 12px; border: 2px solid var(--border); background: #fff;
+  color: var(--text-primary); outline: none; font-family: 'Kanit', sans-serif;
+}
+
+.input-wrap input:focus { border-color: var(--accent); }
+
+.input-unit {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); font-size: 14px; font-weight: 600;
+}
+
+.trim-calc-btn {
+  padding: 14px 24px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff; font-size: 16px; font-weight: 800;
+  cursor: pointer; white-space: nowrap; transition: transform 0.1s; font-family: 'Kanit', sans-serif;
+}
+
+.trim-calc-btn:active { transform: scale(0.96); }
+
+.trim-results {
+  background: #fff;
+  border: 1px solid var(--border); border-radius: 16px; padding: 20px;
+  animation: fadeIn 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.trim-results-title { font-size: 14px; color: var(--text-secondary); font-weight: 600; margin-bottom: 16px; text-align: center; }
+
+.cards { display: flex; gap: 10px; margin-bottom: 16px; }
+.card {
+  flex: 1; background: #f8fafc; border-radius: 12px;
+  padding: 16px 8px; text-align: center; border: 1px solid var(--border);
+}
+.card-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600; }
+.card-value { font-size: 32px; font-weight: 800; line-height: 1; }
+.card-unit { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+.details {
+  background: #f8fafc; border-radius: 12px;
+  padding: 12px 16px; border: 1px solid var(--border);
+}
+.detail-row {
+  display: flex; justify-content: space-between; padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-label { font-size: 13px; color: var(--text-secondary); }
+.detail-value { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+
+.trim-summary {
+  margin-top: 16px; background: rgba(245,158,11,0.06);
+  border: 1px dashed var(--accent); border-radius: 10px;
+  padding: 12px 16px; text-align: center; font-size: 13px; color: #b45309;
+}
+.trim-summary strong { font-weight: 800; }
+
+.examples {
+  margin-top: 12px; background: #fff;
+  border-radius: 12px; padding: 14px 16px; border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.examples-title { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; font-weight: 600; }
+.example-btn {
+  display: flex; justify-content: space-between; width: 100%; padding: 10px 0;
+  border: none; border-bottom: 1px solid #f1f5f9;
+  background: none; cursor: pointer; color: var(--text-secondary); font-size: 13px;
+  font-family: 'Kanit', sans-serif; text-align: left;
+}
+.example-btn:last-child { border-bottom: none; }
+.example-result { color: var(--accent); }
+
+.hidden { display: none; }
+
+/* ===== PAGE 2: GRADIENT SHEET ===== */
+.grad-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 16px 60px;
+}
+
+.grad-header {
+  text-align: center;
+  margin-bottom: 36px;
+  position: relative;
+}
+
+.grad-header::after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+  margin: 16px auto 0;
+  border-radius: 2px;
+}
+
+.grad-header h1 {
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent), #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.grad-header p {
+  color: var(--text-secondary);
+  font-weight: 300;
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+.input-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.input-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+.input-section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-section h2::before { content: '⬡'; font-size: 14px; }
+
+.input-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.input-group { position: relative; }
+
+.input-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  outline: none;
+}
+
+.input-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.input-group .unit {
+  position: absolute;
+  right: 14px;
+  bottom: 13px;
+  font-size: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.shape-selector { display: flex; gap: 12px; margin-bottom: 20px; }
+
+.shape-btn {
+  flex: 1; padding: 14px 16px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-family: 'Kanit', sans-serif;
+  font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: all 0.25s ease;
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+}
+
+.shape-btn:hover { border-color: var(--text-muted); background: var(--bg-card-hover); }
+.shape-btn.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+.shape-btn svg { width: 32px; height: 24px; }
+
+.calc-btn {
+  display: block; width: 100%; padding: 16px; margin-top: 20px;
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  border: none; border-radius: 12px;
+  color: #fff; font-family: 'Kanit', sans-serif;
+  font-size: 16px; font-weight: 700;
+  cursor: pointer; transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+}
+
+.calc-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 30px var(--accent-glow); }
+.calc-btn:active { transform: translateY(0); }
+
+.grad-results { display: none; animation: slideUp 0.5s ease; }
+.grad-results.show { display: block; }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px; margin-bottom: 28px;
+}
+
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px; text-align: center;
+  position: relative; overflow: hidden;
+}
+
+.summary-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.summary-card:nth-child(1)::before { background: var(--accent); }
+.summary-card:nth-child(2)::before { background: var(--sheet-long); }
+.summary-card:nth-child(3)::before { background: var(--success); }
+.summary-card:nth-child(4)::before { background: var(--sheet-short); }
+
+.summary-card .label {
+  font-size: 11px; font-weight: 400; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;
+}
+
+.summary-card .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px; font-weight: 600; color: var(--text-primary);
+}
+
+.summary-card .unit-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+.diagram-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px; margin-bottom: 28px; overflow-x: auto;
+}
+
+.diagram-section h3, .copy-section h3, .table-section h3 {
+  font-size: 14px; font-weight: 600; color: var(--accent);
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.diagram-section h3::before, .copy-section h3::before, .table-section h3::before { content: '◆'; font-size: 10px; }
+
+#roofDiagram { width: 100%; min-height: 200px; }
+
+.table-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden; margin-bottom: 28px;
+}
+
+.table-section h3 { padding: 20px 24px 12px; }
+.table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+thead th {
+  background: rgba(245, 158, 11, 0.08);
+  padding: 12px 16px; text-align: center;
+  font-weight: 500; font-size: 12px;
+  color: var(--text-secondary); letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+
+tbody td {
+  padding: 11px 16px; text-align: center;
+  border-bottom: 1px solid #e2e8f0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; transition: background 0.15s;
+}
+
+tbody tr:hover td { background: rgba(245, 158, 11, 0.04); }
+tbody tr:last-child td { border-bottom: none; }
+
+.td-num { color: var(--text-muted); font-size: 12px; }
+.td-width { color: var(--text-secondary); }
+.td-length { color: var(--accent); font-weight: 600; }
+.td-pos { color: var(--text-muted); font-size: 12px; }
+
+.tag-full {
+  display: inline-block; padding: 2px 8px; border-radius: 6px;
+  font-size: 11px; background: rgba(34, 197, 94, 0.12);
+  color: var(--success); font-family: 'Kanit', sans-serif;
+}
+
+.tag-partial {
+  display: inline-block; padding: 2px 8px; border-radius: 6px;
+  font-size: 11px; background: rgba(6, 182, 212, 0.12);
+  color: var(--sheet-short); font-family: 'Kanit', sans-serif;
+}
+
+.copy-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px; margin-bottom: 28px;
+}
+
+.copy-box {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; color: var(--text-primary);
+  line-height: 1.8; white-space: pre-wrap;
+  max-height: 400px; overflow-y: auto; user-select: all;
+}
+
+.copy-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 12px; padding: 10px 20px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 10px; color: var(--accent);
+  font-family: 'Kanit', sans-serif;
+  font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: all 0.25s ease;
+}
+
+.copy-btn:hover { background: rgba(245, 158, 11, 0.2); border-color: var(--accent); }
+.copy-btn.copied { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.4); color: var(--success); }
+
+.error-msg {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 16px 20px; color: var(--danger);
+  font-size: 14px; margin-top: 16px; display: none;
+}
+
+.error-msg.show { display: block; }
+
+.footer {
+  text-align: center; margin-top: 40px; padding-top: 20px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted); font-size: 12px; font-weight: 300;
+}
+
+@media (max-width: 600px) {
+  .menu-container { padding: 40px 16px; }
+  .menu-title { font-size: 22px; }
+  .menu-card { padding: 24px 16px; gap: 14px; }
+  .menu-card-icon { width: 52px; height: 52px; font-size: 24px; }
+  .menu-card-title { font-size: 16px; }
+  .grad-container { padding: 16px 12px 40px; }
+  .input-section { padding: 20px 16px; }
+  .grad-header h1 { font-size: 22px; }
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .shape-btn { font-size: 12px; padding: 12px 10px; }
+  table { font-size: 12px; }
+  thead th, tbody td { padding: 10px 10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== MENU PAGE ===== -->
+<div class="page active" id="pageMenu">
+  <div class="menu-container">
+    <div class="menu-badge">
+      <span class="menu-badge-icon">⚙️</span>
+      <span class="menu-badge-text">TK METAL SHEET</span>
+    </div>
+    <h1 class="menu-title">เครื่องมือคำนวณ</h1>
+    <p class="menu-subtitle">เลือกโปรแกรมที่ต้องการใช้งาน</p>
+
+    <div class="menu-grid">
+      <div class="menu-card" onclick="goTo('pageTrim')">
+        <div class="menu-card-icon">🔧</div>
+        <div class="menu-card-content">
+          <div class="menu-card-title">คำนวณครอบ</div>
+          <div class="menu-card-desc">คำนวณจำนวนแผ่นและความยาวตัดครอบ 304 / 457</div>
+        </div>
+        <div class="menu-card-arrow">→</div>
+      </div>
+      <div class="menu-card" onclick="goTo('pageGrad')">
+        <div class="menu-card-icon">📐</div>
+        <div class="menu-card-content">
+          <div class="menu-card-title">แผ่นไล่ระดับ</div>
+          <div class="menu-card-desc">คำนวณการตัดแผ่นเมทัลชีทสำหรับหลังคาทรงเฉียง</div>
+        </div>
+        <div class="menu-card-arrow">→</div>
+      </div>
+    </div>
+
+    <div class="menu-footer">TK Metal Sheet — เครื่องมือคำนวณสำหรับงานเมทัลชีท</div>
+  </div>
+</div>
+
+<!-- ===== PAGE 1: TRIM CALCULATOR ===== -->
+<div class="page" id="pageTrim">
+  <div class="trim-container">
+    <button class="back-btn" onclick="goTo('pageMenu')">← กลับเมนูหลัก</button>
+
+    <div class="trim-header">
+      <div class="trim-badge">
+        <span class="trim-badge-icon">🔧</span>
+        <span class="trim-badge-text">TK METAL SHEET</span>
+      </div>
+      <h1>คำนวณครอบเมทัลชีท</h1>
+      <p class="trim-subtitle">แผ่นเต็ม 914 mm · พับสูงสุด 3.10 ม. · ซ้อน 10 ซม.</p>
+    </div>
+
+    <div>
+      <span class="trim-label">เลือกหน้าครอบ</span>
+      <div class="type-row">
+        <button class="type-btn" id="btn-304" onclick="trimSelectType('304')">
+          <div class="type-num">304</div>
+          <div class="type-desc">แบ่ง 3 ชิ้น/แผ่น</div>
+        </button>
+        <button class="type-btn active" id="btn-457" onclick="trimSelectType('457')">
+          <div class="type-num">457</div>
+          <div class="type-desc">แบ่ง 2 ชิ้น/แผ่น</div>
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <span class="trim-label">ความยาวรวมที่ต้องการ (เมตร)</span>
+      <div class="input-row">
+        <div class="input-wrap">
+          <input type="number" id="trimTotalLength" placeholder="เช่น 45" step="any">
+          <span class="input-unit">ม.</span>
+        </div>
+        <button class="trim-calc-btn" onclick="trimCalculate()">คำนวณ</button>
+      </div>
+    </div>
+
+    <div class="trim-results hidden" id="trimResults">
+      <div class="trim-results-title" id="trimResultsTitle"></div>
+      <div class="cards">
+        <div class="card">
+          <div class="card-label">จำนวนแผ่น</div>
+          <div class="card-value" id="trimVSheets" style="color:#d97706"></div>
+          <div class="card-unit">แผ่น</div>
+        </div>
+        <div class="card">
+          <div class="card-label">ความยาวตัด/แผ่น</div>
+          <div class="card-value" id="trimVCutLen" style="color:#b45309"></div>
+          <div class="card-unit">เมตร</div>
+        </div>
+        <div class="card">
+          <div class="card-label">จำนวนชิ้นครอบ</div>
+          <div class="card-value" id="trimVPieces" style="color:#0284c7"></div>
+          <div class="card-unit">ชิ้น</div>
+        </div>
+      </div>
+      <div class="details" id="trimDetails"></div>
+      <div class="trim-summary" id="trimSummary"></div>
+    </div>
+
+    <div class="examples" id="trimExamples">
+      <div class="examples-title">⚡ ตัวอย่างเร็ว</div>
+      <button class="example-btn" onclick="trimRunExample('457',30)">
+        <span>ครอบ 457 ยาว 30 ม.</span><span class="example-result">→ 5 แผ่น × 3.10 ม.</span>
+      </button>
+      <button class="example-btn" onclick="trimRunExample('304',8.25)">
+        <span>ครอบ 304 ยาว 8.25 ม.</span><span class="example-result">→ 1 แผ่น × 2.85 ม.</span>
+      </button>
+      <button class="example-btn" onclick="trimRunExample('457',45)">
+        <span>ครอบ 457 ยาว 45 ม.</span><span class="example-result">→ 8 แผ่น × 2.92 ม.</span>
+      </button>
+      <button class="example-btn" onclick="trimRunExample('304',50)">
+        <span>ครอบ 304 ยาว 50 ม.</span><span class="example-result">→ 6 แผ่น × 2.88 ม.</span>
+      </button>
+    </div>
+
+    <div class="footer">TK Metal Sheet — โปรแกรมคำนวณครอบเมทัลชีท</div>
+  </div>
+</div>
+
+<!-- ===== PAGE 2: GRADIENT SHEET ===== -->
+<div class="page" id="pageGrad">
+  <div class="grad-container">
+    <button class="back-btn" onclick="goTo('pageMenu')">← กลับเมนูหลัก</button>
+
+    <div class="grad-header">
+      <h1>โปรแกรมไล่ระดับเมทัลชีท</h1>
+      <p>คำนวณการตัดแผ่นเมทัลชีทสำหรับหลังคาทรงเฉียง</p>
+    </div>
+
+    <div class="input-section">
+      <h2>ข้อมูลหลังคา</h2>
+
+      <div class="shape-selector">
+        <button class="shape-btn active" onclick="gradSelectShape('trapezoid')" id="btnTrapezoid">
+          <svg viewBox="0 0 48 32" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="10,4 38,4 44,28 4,28"/>
+          </svg>
+          สี่เหลี่ยมคางหมู
+        </button>
+        <button class="shape-btn" onclick="gradSelectShape('triangle')" id="btnTriangle">
+          <svg viewBox="0 0 48 32" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="24,4 44,28 4,28"/>
+          </svg>
+          สามเหลี่ยม
+        </button>
+      </div>
+
+      <div class="input-grid">
+        <div class="input-group">
+          <label>หน้ากว้างใช้งาน (ต่อแผ่น)</label>
+          <input type="number" id="sheetWidth" value="0.76" step="0.01" min="0.01">
+          <span class="unit">เมตร</span>
+        </div>
+        <div class="input-group">
+          <label>ความกว้างรวมหลังคา</label>
+          <input type="number" id="totalWidth" value="12" step="0.01" min="0.01">
+          <span class="unit">เมตร</span>
+        </div>
+        <div class="input-group">
+          <label>ความยาวด้านยาวสุด</label>
+          <input type="number" id="maxLength" value="11.40" step="0.01" min="0.01">
+          <span class="unit">เมตร</span>
+        </div>
+        <div class="input-group" id="minLengthGroup">
+          <label>ความยาวด้านสั้นสุด</label>
+          <input type="number" id="minLength" value="8.60" step="0.01" min="0">
+          <span class="unit">เมตร</span>
+        </div>
+      </div>
+
+      <button class="calc-btn" onclick="gradCalculate()">คำนวณ</button>
+      <div class="error-msg" id="gradErrorMsg"></div>
+    </div>
+
+    <div class="grad-results" id="gradResults">
+      <div class="summary-grid" id="gradSummaryGrid"></div>
+      <div class="diagram-section">
+        <h3>แผนผังการตัดแผ่น</h3>
+        <svg id="roofDiagram"></svg>
+      </div>
+      <div class="copy-section">
+        <h3>ข้อมูลสำหรับ Copy ไป Google Sheet</h3>
+        <div class="copy-box" id="gradCopyBox"></div>
+        <button class="copy-btn" id="gradCopyBtn" onclick="gradCopyToClipboard()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <span id="gradCopyBtnText">คัดลอกข้อมูล</span>
+        </button>
+      </div>
+      <div class="table-section">
+        <h3>รายละเอียดแต่ละแผ่น</h3>
+        <div class="table-wrapper">
+          <table id="gradResultTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">TK Metal Sheet — โปรแกรมคำนวณไล่ระดับเมทัลชีท</div>
+  </div>
+</div>
+
+<script>
+// ===== NAVIGATION =====
+function goTo(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ===== TRIM CALCULATOR =====
+const TRIM_TYPES = { '304': { piecesPerSheet: 3 }, '457': { piecesPerSheet: 2 } };
+const TRIM_MAX_LENGTH = 3.10;
+const TRIM_OVERLAP = 0.10;
+let trimCurrentType = '457';
+
+function trimSelectType(type) {
+  trimCurrentType = type;
+  document.getElementById('btn-304').classList.toggle('active', type === '304');
+  document.getElementById('btn-457').classList.toggle('active', type === '457');
+  document.getElementById('trimResults').classList.add('hidden');
+  document.getElementById('trimExamples').classList.remove('hidden');
+}
+
+function trimCalc(type, totalLength) {
+  if (!totalLength || totalLength <= 0) return null;
+  const pps = TRIM_TYPES[type].piecesPerSheet;
+  for (let sheets = 1; sheets <= 500; sheets++) {
+    const totalPieces = sheets * pps;
+    const usable = totalLength / totalPieces;
+    const usableR = Math.ceil(usable * 100) / 100;
+    const cutLen = Math.round((usableR + TRIM_OVERLAP) * 100) / 100;
+    if (cutLen <= TRIM_MAX_LENGTH) {
+      const actualTotal = totalPieces * usableR;
+      return {
+        sheets, totalPieces, usableLength: usableR, cutLength: cutLen,
+        actualTotal, surplus: Math.round((actualTotal - totalLength) * 100) / 100
+      };
+    }
+  }
+  return null;
+}
+
+function trimShowResult(type, res) {
+  document.getElementById('trimResultsTitle').textContent = '📋 ผลการคำนวณ — ครอบ ' + type;
+  document.getElementById('trimVSheets').textContent = res.sheets;
+  document.getElementById('trimVCutLen').textContent = res.cutLength.toFixed(2);
+  document.getElementById('trimVPieces').textContent = res.totalPieces;
+
+  const rows = [
+    ['ความยาวใช้งาน/ชิ้น', res.usableLength.toFixed(2) + ' ม.'],
+    ['Overlap/ชิ้น', '10 ซม.'],
+    ['ความยาวรวมจริง', res.actualTotal.toFixed(2) + ' ม.'],
+    ['เผื่อเกิน', '+' + res.surplus.toFixed(2) + ' ม.']
+  ];
+
+  document.getElementById('trimDetails').innerHTML = rows.map(r =>
+    '<div class="detail-row"><span class="detail-label">' + r[0] + '</span><span class="detail-value">' + r[1] + '</span></div>'
+  ).join('');
+
+  document.getElementById('trimSummary').innerHTML =
+    '🔧 ตัดแผ่น 914 mm ยาว <strong>' + res.cutLength.toFixed(2) + ' ม.</strong> จำนวน <strong>' +
+    res.sheets + ' แผ่น</strong> → แบ่งได้ <strong>' + res.totalPieces + ' ชิ้น</strong> ครบพอดี ไม่มีเศษ';
+
+  document.getElementById('trimResults').classList.remove('hidden');
+  document.getElementById('trimExamples').classList.add('hidden');
+}
+
+function trimCalculate() {
+  const len = parseFloat(document.getElementById('trimTotalLength').value);
+  if (isNaN(len) || len <= 0) return;
+  const res = trimCalc(trimCurrentType, len);
+  if (res) trimShowResult(trimCurrentType, res);
+}
+
+function trimRunExample(type, length) {
+  trimSelectType(type);
+  document.getElementById('trimTotalLength').value = length;
+  const res = trimCalc(type, length);
+  if (res) trimShowResult(type, res);
+}
+
+document.getElementById('trimTotalLength').addEventListener('keydown', e => {
+  if (e.key === 'Enter') trimCalculate();
+});
+
+// ===== GRADIENT SHEET CALCULATOR =====
+let gradCurrentShape = 'trapezoid';
+
+function gradSelectShape(shape) {
+  gradCurrentShape = shape;
+  document.getElementById('btnTrapezoid').classList.toggle('active', shape === 'trapezoid');
+  document.getElementById('btnTriangle').classList.toggle('active', shape === 'triangle');
+  const minGroup = document.getElementById('minLengthGroup');
+  if (shape === 'triangle') {
+    minGroup.style.display = 'none';
+    document.getElementById('minLength').value = '0';
+  } else {
+    minGroup.style.display = '';
+    if (document.getElementById('minLength').value === '0') {
+      document.getElementById('minLength').value = '8.60';
+    }
+  }
+}
+
+function gradCalculate() {
+  const errorEl = document.getElementById('gradErrorMsg');
+  errorEl.classList.remove('show');
+
+  const sheetW = parseFloat(document.getElementById('sheetWidth').value);
+  const totalW = parseFloat(document.getElementById('totalWidth').value);
+  const maxL = parseFloat(document.getElementById('maxLength').value);
+  const minL = parseFloat(document.getElementById('minLength').value);
+
+  if (isNaN(sheetW) || isNaN(totalW) || isNaN(maxL) || isNaN(minL)) {
+    gradShowError('กรุณากรอกข้อมูลให้ครบทุกช่อง'); return;
+  }
+  if (sheetW <= 0 || totalW <= 0 || maxL <= 0) {
+    gradShowError('ค่าต้องมากกว่า 0'); return;
+  }
+  if (minL < 0) {
+    gradShowError('ความยาวด้านสั้นสุดต้องไม่ติดลบ'); return;
+  }
+  if (maxL <= minL) {
+    gradShowError('ความยาวด้านยาวสุดต้องมากกว่าด้านสั้นสุด'); return;
+  }
+
+  const rate = (maxL - minL) / totalW;
+  const fullSheets = Math.floor(totalW / sheetW);
+  const remainder = gradRound2(totalW - fullSheets * sheetW);
+  const totalSheets = remainder > 0 ? fullSheets + 1 : fullSheets;
+
+  const sheets = [];
+  let totalLength = 0;
+
+  for (let i = 0; i < totalSheets; i++) {
+    const w = (i < fullSheets) ? sheetW : remainder;
+    const startPos = gradRound2(i * sheetW);
+    const length = gradRound2(maxL - startPos * rate);
+    totalLength += length;
+    sheets.push({ num: i + 1, width: w, startPos, length, isFull: i < fullSheets });
+  }
+
+  totalLength = gradRound2(totalLength);
+
+  gradRenderSummary(totalSheets, totalLength, maxL, sheets[sheets.length - 1].length);
+  gradRenderCopyBox(sheets);
+  gradRenderTable(sheets);
+  gradRenderDiagram(sheets, totalW, maxL, minL);
+
+  document.getElementById('gradResults').classList.add('show');
+  document.getElementById('gradResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function gradRound2(val) { return Math.round(val * 100) / 100; }
+
+function gradShowError(msg) {
+  const el = document.getElementById('gradErrorMsg');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function gradRenderSummary(total, totalLen, maxLen, minLen) {
+  document.getElementById('gradSummaryGrid').innerHTML = `
+    <div class="summary-card"><div class="label">จำนวนแผ่น</div><div class="value">${total}</div><div class="unit-label">แผ่น</div></div>
+    <div class="summary-card"><div class="label">ยาวสุด</div><div class="value">${maxLen.toFixed(2)}</div><div class="unit-label">เมตร</div></div>
+    <div class="summary-card"><div class="label">ความยาวรวม</div><div class="value">${totalLen.toFixed(2)}</div><div class="unit-label">เมตร</div></div>
+    <div class="summary-card"><div class="label">สั้นสุด</div><div class="value">${minLen.toFixed(2)}</div><div class="unit-label">เมตร</div></div>
+  `;
+}
+
+function gradRenderTable(sheets) {
+  let html = `<thead><tr><th>แผ่นที่</th><th>หน้ากว้าง (ม.)</th><th>ตำแหน่งเริ่ม (ม.)</th><th>ความยาวตัด (ม.)</th><th>สถานะ</th></tr></thead><tbody>`;
+  sheets.forEach(s => {
+    const tag = s.isFull ? '<span class="tag-full">เต็มแผ่น</span>' : `<span class="tag-partial">${s.width.toFixed(2)} ม.</span>`;
+    html += `<tr><td class="td-num">${s.num}</td><td class="td-width">${s.width.toFixed(2)}</td><td class="td-pos">${s.startPos.toFixed(2)}</td><td class="td-length">${s.length.toFixed(2)}</td><td>${tag}</td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('gradResultTable').innerHTML = html;
+}
+
+function gradRenderCopyBox(sheets) {
+  const lines = sheets.map(s =>
+    `- แผ่นยาว ${s.length.toFixed(2)} เมตร 1 แผ่น\t${s.length.toFixed(2)}`
+  );
+  document.getElementById('gradCopyBox').textContent = lines.join('\n');
+}
+
+function gradCopyToClipboard() {
+  const text = document.getElementById('gradCopyBox').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('gradCopyBtn');
+    const btnText = document.getElementById('gradCopyBtnText');
+    btn.classList.add('copied');
+    btnText.textContent = 'คัดลอกแล้ว ✓';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btnText.textContent = 'คัดลอกข้อมูล';
+    }, 2000);
+  });
+}
+
+function gradRenderDiagram(sheets, totalW, maxL, minL) {
+  const svg = document.getElementById('roofDiagram');
+  const pad = 60, svgW = 700, svgH = 280;
+  const drawW = svgW - pad * 2, drawH = svgH - pad * 2;
+  svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+  const scaleX = drawW / totalW, scaleY = drawH / maxL;
+  let c = '';
+
+  for (let i = 0; i <= 5; i++) {
+    const y = pad + (drawH / 5) * i;
+    const val = maxL - (maxL / 5) * i;
+    c += `<line x1="${pad}" y1="${y}" x2="${svgW - pad}" y2="${y}" stroke="#e2e8f0" stroke-width="0.5"/>`;
+    c += `<text x="${pad - 8}" y="${y + 4}" text-anchor="end" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">${val.toFixed(1)}</text>`;
+  }
+
+  sheets.forEach((s, i) => {
+    const x = pad + s.startPos * scaleX;
+    const w = s.width * scaleX;
+    const h = s.length * scaleY;
+    const y = pad + drawH - h;
+    const t = i / (sheets.length - 1 || 1);
+    const r = Math.round(59 + t * (6 - 59));
+    const g = Math.round(130 + t * (182 - 130));
+    const b = Math.round(246 + t * (212 - 246));
+    c += `<rect x="${x}" y="${y}" width="${Math.max(w - 1, 2)}" height="${h}" fill="rgba(${r},${g},${b},0.6)" stroke="rgba(${r},${g},${b},0.9)" stroke-width="0.5" rx="1"/>`;
+    if (sheets.length <= 20 || i % 2 === 0) {
+      c += `<text x="${x + w / 2}" y="${svgH - pad + 16}" text-anchor="middle" fill="#64748b" font-size="9" font-family="JetBrains Mono">${s.num}</text>`;
+    }
+  });
+
+  const y1 = pad + drawH - maxL * scaleY;
+  const endLen = maxL - totalW * ((maxL - minL) / totalW);
+  const y2 = pad + drawH - endLen * scaleY;
+  c += `<line x1="${pad}" y1="${y1}" x2="${pad + drawW}" y2="${y2}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.7"/>`;
+  c += `<text x="${svgW / 2}" y="${svgH - 8}" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Kanit">แผ่นที่</text>`;
+  c += `<text x="14" y="${svgH / 2}" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Kanit" transform="rotate(-90, 14, ${svgH / 2})">ความยาว (ม.)</text>`;
+  c += `<text x="${pad}" y="${pad - 10}" text-anchor="start" fill="var(--accent)" font-size="11" font-family="JetBrains Mono" font-weight="600">${maxL.toFixed(2)} ม.</text>`;
+  c += `<text x="${svgW - pad}" y="${pad - 10}" text-anchor="end" fill="var(--sheet-short)" font-size="11" font-family="JetBrains Mono" font-weight="600">${minL.toFixed(2)} ม.</text>`;
+
+  svg.innerHTML = c;
+}
+
+// Enter key for gradient inputs
+document.querySelectorAll('#pageGrad .input-group input').forEach(inp => {
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') gradCalculate(); });
+});
+</script>
+</body>
+</html>
